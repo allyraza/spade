@@ -2,27 +2,31 @@ package pipeline
 
 import "net/http"
 
-// PipelineFunc :
-type Func func(http.HandlerFunc) http.HandlerFunc
+// Middleware :
+type Middleware func(http.Handler) http.Handler
 
 // Pipeline :
 type Pipeline struct {
-	handlers []Func
+	middlewares []Middleware
 }
 
 // New :
-func New(handlers ...Func) *Pipeline {
+func New(middlewares ...Middleware) *Pipeline {
 	return &Pipeline{
-		handlers: handlers,
+		middlewares: middlewares,
 	}
 }
 
 // Run : wrap handler with handlers in seq
-func (p *Pipeline) Run(h http.HandlerFunc) http.HandlerFunc {
-
-	for _, hf := range p.handlers {
-		h = hf(h)
+func (p *Pipeline) Run(h http.Handler) http.Handler {
+	for _, m := range p.middlewares {
+		h = m(h)
 	}
 
 	return h
+}
+
+// RunFunc : wrap handler with handlers in seq
+func (p *Pipeline) RunFunc(h http.HandlerFunc) http.Handler {
+	return p.Run(h)
 }

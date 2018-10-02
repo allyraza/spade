@@ -11,7 +11,7 @@ type EventHandler struct {
 	Database *sql.DB
 }
 
-// Create : collects a new event from post request
+// Track : collects a new event from post request
 func (ec *EventHandler) Track(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "event created successuflly")
 }

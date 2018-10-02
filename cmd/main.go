@@ -17,6 +17,7 @@ func main() {
 	app := spade.New(config)
 
 	log.Printf("listening on %v\n", config.Address)
+
 	err := http.ListenAndServe(config.Address, app.Mux)
 	if err != nil {
 		log.Fatalf("Spade HTTP: %v\n", err)

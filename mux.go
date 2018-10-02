@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/allyraza/spade/handlers"
+	"github.com/allyraza/spade/pkg/handlers"
 	"github.com/allyraza/spade/pkg/pipeline"
 )
 
@@ -13,27 +13,39 @@ func (s *Spade) initMux() {
 
 	eventHandler := &handlers.EventHandler{Database: s.Database}
 
-	apiPipeline := pipeline.New(logger, checkPost)
-	webPipeline := pipeline.New(logger)
+	// pipeline for api
+	api := pipeline.New(
+		Logger,
+		CheckPost,
+	)
 
-	s.Mux.HandleFunc("/track", apiPipeline.Run(eventHandler.Track))
-	s.Mux.HandleFunc("/web", webPipeline.Run(eventHandler.Track))
+	// pipeline of middlewares for web handlers
+	web := pipeline.New(
+		Logger,
+	)
+
+	s.Mux.Handle("/track", api.RunFunc(eventHandler.Track))
+
+	s.Mux.Handle("/web", web.RunFunc(eventHandler.Track))
 }
 
-func logger(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%v %v", r.Method, r.URL.Path)
+// Logger : logs request method and path
+func Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%v %v\n", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
-	}
+	})
 }
 
-func checkPost(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// CheckPost : allows post request method only
+func CheckPost(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			log.Printf("checkPost: invalid request method (%v)\n", r.Method)
-			fmt.Fprint(w, "bad request")
+			fmt.Fprint(w, "bad request\n")
 			return
 		}
+
 		next.ServeHTTP(w, r)
-	}
+	})
 }
